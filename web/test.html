@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WebSocket Test</title>
+  </head>
+  <body>
+    <h1>WebSocket Test</h1>
+    <p>Open the console (F12)</p>
+
+    <script>
+      let socket = new WebSocket("ws://localhost:4000/ws");
+
+      socket.onopen = () => {
+        console.log("Connected!");
+        socket.send("Hello, World!");
+      };
+
+      socket.onmessage = (event) => {
+        console.log("Received:", event.data);
+      };
+
+      socket.onerror = (error) => {
+        console.error("Error:", error);
+      };
+
+      socket.onclose = (event) => {
+        console.log("Connection closed:", event.code, event.reason);
+      };
+    </script>
+  </body>
+</html>
