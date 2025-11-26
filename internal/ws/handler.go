@@ -1,12 +1,14 @@
-
 package ws
 
 // Filename: internal/ws/handler.go
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -18,6 +20,54 @@ const (
 	pongWait   = 30 * time.Second    // if we don't get a pong in 30s, time out
 	pingPeriod = (pongWait * 9) / 10 // send pings at ~90% of pongWait (e.g., 27s)
 )
+
+// reverseString reverses a string handling Unicode properly
+func reverseString(s string) string {
+	runes := []rune(s)
+	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+		runes[i], runes[j] = runes[j], runes[i]
+	}
+	return string(runes)
+}
+
+// processCommand processes JSON commands and returns JSON response
+func processCommand(payload []byte) ([]byte, error) {
+	var req CommandRequest
+	if err := json.Unmarshal(payload, &req); err != nil {
+		resp := CommandResponse{
+			Error: "Invalid JSON",
+		}
+		return json.Marshal(resp)
+	}
+
+	var result float64
+	var errMsg string
+
+	switch req.Command {
+	case "add":
+		result = req.A + req.B
+	case "subtract":
+		result = req.A - req.B
+	case "multiply":
+		result = req.A * req.B
+	case "divide":
+		if req.B == 0 {
+			errMsg = "Division by zero"
+		} else {
+			result = req.A / req.B
+		}
+	default:
+		errMsg = "Unknown command"
+	}
+
+	resp := CommandResponse{
+		Result:  result,
+		Command: req.Command,
+		Error:   errMsg,
+	}
+
+	return json.Marshal(resp)
+}
 
 // Only allow pages served from this origin to connect
 var allowedOrigins = []string{
@@ -132,7 +182,39 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		// Echo back text messages
 		if msgType == websocket.TextMessage {
 			_ = conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := conn.WriteMessage(websocket.TextMessage, payload); err != nil {
+			// Part 3: Increment the message counter atomically
+			count := atomic.AddUint64(&messageCounter, 1)
+
+			var responsePayload []byte
+
+			// Part 4: Check if payload is JSON (starts with '{')
+			if len(payload) > 0 && payload[0] == '{' {
+				jsonResponse, err := processCommand(payload)
+				if err != nil {
+					log.Printf("JSON processing error: %v", err)
+					responsePayload = []byte(fmt.Sprintf("[Msg #%d] Error processing command", count))
+				} else {
+					// For JSON commands, we don't add the message counter prefix
+					responsePayload = jsonResponse
+				}
+			} else {
+				// Part 1: Check if the message starts with "UPPER:"
+				message := string(payload)
+				if strings.HasPrefix(message, "UPPER:") {
+					// Extract the rest and convert to uppercase
+					text := strings.TrimPrefix(message, "UPPER:")
+					payload = []byte(strings.ToUpper(text))
+				} else if strings.HasPrefix(message, "REVERSE:") {
+					// Part 2: Check if the message starts with "REVERSE:"
+					text := strings.TrimPrefix(message, "REVERSE:")
+					payload = []byte(reverseString(text))
+				}
+
+				// Part 3: Format the response with the counter
+				responsePayload = []byte(fmt.Sprintf("[Msg #%d] %s", count, payload))
+			}
+
+			if err := conn.WriteMessage(websocket.TextMessage, responsePayload); err != nil {
 				log.Printf("write error: %v", err)
 				break
 			}
