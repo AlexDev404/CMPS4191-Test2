@@ -15,6 +15,23 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// Message counter for tracking total messages across all connections
+var messageCounter uint64
+
+// CommandRequest represents a JSON command from the client
+type CommandRequest struct {
+	Command string  `json:"command"`
+	A       float64 `json:"a"`
+	B       float64 `json:"b"`
+}
+
+// CommandResponse represents a JSON response to the client
+type CommandResponse struct {
+	Result  float64 `json:"result"`
+	Command string  `json:"command"`
+	Error   string  `json:"error,omitempty"`
+}
+
 // Heartbeat and timeout settings
 const (
 	writeWait  = 5 * time.Second     // max time to complete a write
@@ -183,6 +200,7 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		// Echo back text messages
 		if msgType == websocket.TextMessage {
 			_ = conn.SetWriteDeadline(time.Now().Add(writeWait))
+
 			// Part 3: Increment the message counter atomically
 			count := atomic.AddUint64(&messageCounter, 1)
 

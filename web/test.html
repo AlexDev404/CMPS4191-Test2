@@ -25,6 +25,13 @@
     <button id="connect">Connect</button>
     <button id="start">Start Sending (client ping)</button>
     <button id="stop">Stop Sending</button>
+    <br><br>
+    <button id="upper">Send UPPER</button>
+    <button id="reverse">Send REVERSE</button>
+    <button id="add">Send JSON Add</button>
+    <button id="subtract">Send JSON Subtract</button>
+    <button id="multiply">Send JSON Multiply</button>
+    <button id="divide">Send JSON Divide</button>
     <pre id="log"></pre>
 
     <script>
@@ -101,6 +108,78 @@
         } else {
           log("Nothing to stop.");
         }
+      });
+
+      // --- UPPERCASE TEST ---------------------------------------------
+      const upper_btn = document.querySelector("#upper");
+      upper_btn.addEventListener("click", () => {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          log("Not connected yet.");
+          return;
+        }
+        const msg = "UPPER:hello world";
+        socket.send(msg);
+        log("SEND:", msg);
+      });
+
+      // --- REVERSE TEST -----------------------------------------------
+      const reverse_btn = document.querySelector("#reverse");
+      reverse_btn.addEventListener("click", () => {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          log("Not connected yet.");
+          return;
+        }
+        const msg = "REVERSE:hello world";
+        socket.send(msg);
+        log("SEND:", msg);
+      });
+
+      // --- JSON ADD TEST ----------------------------------------------
+      const add_btn = document.querySelector("#add");
+      add_btn.addEventListener("click", () => {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          log("Not connected yet.");
+          return;
+        }
+        const msg = JSON.stringify({command: "add", a: 10, b: 5});
+        socket.send(msg);
+        log("SEND:", msg);
+      });
+
+      // --- JSON SUBTRACT TEST -----------------------------------------
+      const subtract_btn = document.querySelector("#subtract");
+      subtract_btn.addEventListener("click", () => {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          log("Not connected yet.");
+          return;
+        }
+        const msg = JSON.stringify({command: "subtract", a: 20, b: 7});
+        socket.send(msg);
+        log("SEND:", msg);
+      });
+
+      // --- JSON MULTIPLY TEST -----------------------------------------
+      const multiply_btn = document.querySelector("#multiply");
+      multiply_btn.addEventListener("click", () => {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          log("Not connected yet.");
+          return;
+        }
+        const msg = JSON.stringify({command: "multiply", a: 6, b: 7});
+        socket.send(msg);
+        log("SEND:", msg);
+      });
+
+      // --- JSON DIVIDE TEST -------------------------------------------
+      const divide_btn = document.querySelector("#divide");
+      divide_btn.addEventListener("click", () => {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          log("Not connected yet.");
+          return;
+        }
+        const msg = JSON.stringify({command: "divide", a: 100, b: 4});
+        socket.send(msg);
+        log("SEND:", msg);
       });
     </script>
   </body>
