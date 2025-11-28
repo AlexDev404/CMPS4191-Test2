@@ -1,4 +1,4 @@
-# ws-main
+# CMPS4191-Test2
 
 Simple Go WebSocket playground that serves a static test page and exposes a JSON-aware echo service for experimenting with WebSocket message handling patterns.
 
